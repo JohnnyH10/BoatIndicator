@@ -1,0 +1,4 @@
+name: BoatIndicator
+version: '${project.version}'
+main: ind.johnnyht.boatindicator.BoatIndicator
+api-version: '1.19'
