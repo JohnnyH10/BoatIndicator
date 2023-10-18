@@ -2,15 +2,16 @@ package ind.johnnyht.boatindicator;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.EulerAngle;
-import org.bukkit.util.Vector;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
 
 public final class BoatIndicator extends JavaPlugin implements Listener {
 
@@ -28,19 +29,35 @@ public final class BoatIndicator extends JavaPlugin implements Listener {
             Location playerLocation = player.getLocation();
 
             // Calculate the direction the player is looking
-            Vector direction = playerLocation.getDirection();
+            Location headLocation = playerLocation.clone().add(0, -1.25, 0); // Lower by two blocks
 
-            // Summon the player's head as a block and set its direction
-            Location headLocation = playerLocation.clone().add(0, 1, 0);
-            FallingBlock headBlock = headLocation.getWorld().spawnFallingBlock(headLocation, Material.PLAYER_HEAD.createBlockData());
+            // Create an ArmorStand to represent the player's head
+            ItemStack item = new ItemStack(Material.PLAYER_HEAD, 1, (short) 3);
+            SkullMeta skull = (SkullMeta) item.getItemMeta();
+            skull.setDisplayName(player.getName());
+            ArmorStand headStand = headLocation.getWorld().spawn(headLocation, ArmorStand.class);
+            headStand.setHelmet(getHead(player)); // Use player's head as helmet
 
-            // Adjust the block's orientation based on the player's viewing direction
-            headBlock.setVelocity(direction.multiply(1.0)); // You may need to tweak the multiplier to get the desired orientation
+            // Set the orientation of the ArmorStand
+            headStand.setGravity(false); // Prevent it from falling
+            headStand.setVisible(false); // Hide the ArmorStand
 
-            // Schedule the removal of the head block after one tick
+            // Schedule the removal of the ArmorStand after one tick
             getServer().getScheduler().runTaskLater(this, () -> {
-                headBlock.remove();
-            }, 1);
+                headStand.remove();
+            }, 2);
         }
+    }
+    public static @Nullable ItemStack getHead(Player player) {
+        int lifePlayer = (int) player.getHealth();
+        ItemStack item = new ItemStack(Material.PLAYER_HEAD, 1, (short) 3);
+        SkullMeta skull = (SkullMeta) item.getItemMeta();
+        skull.setDisplayName(player.getName());
+        ArrayList<String> lore = new ArrayList<String>();
+        lore.add("Custom head");
+        skull.setLore(lore);
+        skull.setOwner(player.getName());
+        item.setItemMeta(skull);
+        return item;
     }
 }
