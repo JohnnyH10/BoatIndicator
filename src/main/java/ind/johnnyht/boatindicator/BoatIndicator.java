@@ -17,6 +17,7 @@ public final class BoatIndicator extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         // Plugin startup logic
+        getServer().getPluginManager().registerEvents(this, this);
 
     }
 
