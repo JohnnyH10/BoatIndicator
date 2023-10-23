@@ -2,16 +2,17 @@ package ind.johnnyht.boatindicator;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.ArrayList;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.EulerAngle;
+import org.bukkit.util.Vector;
 
 public final class BoatIndicator extends JavaPlugin implements Listener {
 
@@ -19,45 +20,60 @@ public final class BoatIndicator extends JavaPlugin implements Listener {
     public void onEnable() {
         // Plugin startup logic
         getServer().getPluginManager().registerEvents(this, this);
-
+    }
+    @EventHandler
+    public void onVehicleEnter(VehicleEnterEvent event) {
+        if (event.getEntered() instanceof Player && event.getVehicle() instanceof Boat) {
+            Player player = (Player) event.getEntered();
+            spawnAndAttachArmorStand(player);
+        }
     }
 
     @EventHandler
-    public void onPlayerMove(PlayerMoveEvent event) {
-        if (event.getPlayer().isInsideVehicle() && event.getPlayer().getVehicle() instanceof Boat) {
-            Player player = event.getPlayer();
-            Location playerLocation = player.getLocation();
-
-            // Calculate the direction the player is looking
-            Location headLocation = playerLocation.clone().add(0, -1.25, 0); // Lower by two blocks
-
-            // Create an ArmorStand to represent the player's head
-            ItemStack item = new ItemStack(Material.PLAYER_HEAD, 1, (short) 3);
-            SkullMeta skull = (SkullMeta) item.getItemMeta();
-            skull.setDisplayName(player.getName());
-            ArmorStand headStand = headLocation.getWorld().spawn(headLocation, ArmorStand.class);
-            headStand.setHelmet(getHead(player)); // Use player's head as helmet
-
-            // Set the orientation of the ArmorStand
-            headStand.setGravity(false); // Prevent it from falling
-            headStand.setVisible(false); // Hide the ArmorStand
-
-            // Schedule the removal of the ArmorStand after one tick
-            getServer().getScheduler().runTaskLater(this, () -> {
-                headStand.remove();
-            }, 2);
+    public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
+        if (event.getRightClicked() instanceof ArmorStand) {
+            ArmorStand armorStand = (ArmorStand) event.getRightClicked();
+            // Check if the Armor Stand is holding a player head item (customize this check)
+            if (armorStand.getHelmet() != null && armorStand.getHelmet().getType() == Material.PLAYER_HEAD) {
+                // Remove the Armor Stand when it's interacted with
+                armorStand.remove();
+            }
         }
     }
-    public static @Nullable ItemStack getHead(Player player) {
-        int lifePlayer = (int) player.getHealth();
-        ItemStack item = new ItemStack(Material.PLAYER_HEAD, 1, (short) 3);
-        SkullMeta skull = (SkullMeta) item.getItemMeta();
-        skull.setDisplayName(player.getName());
-        ArrayList<String> lore = new ArrayList<String>();
-        lore.add("Custom head");
-        skull.setLore(lore);
-        skull.setOwner(player.getName());
-        item.setItemMeta(skull);
-        return item;
+
+    private void spawnAndAttachArmorStand(Player player) {
+        Location playerLocation = player.getLocation();
+
+        ArmorStand armorStand = playerLocation.getWorld().spawn(playerLocation, ArmorStand.class);
+        armorStand.setMarker(true);
+        armorStand.setGravity(false);
+        armorStand.setVisible(false);
+
+        // Attach the armor stand to the player
+        armorStand.addPassenger(player);
+
+        // Schedule a task to constantly teleport the armor stand to the player
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!player.isOnline() || player.isDead()) {
+                    armorStand.remove();
+                    this.cancel();
+                } else {
+                    armorStand.teleport(player);
+                }
+            }
+        }.runTaskTimer(this, 0, 1);
+
+        // Schedule a task to remove the armor stand if the player logs out
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!player.isOnline() || player.isDead()) {
+                    armorStand.remove();
+                    this.cancel();
+                }
+            }
+        }.runTaskTimer(this, 20, 20);
     }
 }
