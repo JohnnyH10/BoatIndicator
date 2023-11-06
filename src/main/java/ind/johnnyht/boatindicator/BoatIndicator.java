@@ -1,6 +1,5 @@
 package ind.johnnyht.boatindicator;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.*;
@@ -12,14 +11,16 @@ import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
-import static ind.johnnyht.boatindicator.BoatIndicator.PlayerMoveListener.getHead;
 
 public final class BoatIndicator extends JavaPlugin implements Listener {
-    private ArmorStand armorStand = null;
+
+    private final Map<UUID, ArmorStand> armorStand = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -31,7 +32,9 @@ public final class BoatIndicator extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         if (armorStand != null) {
-            armorStand.remove();
+            for(ArmorStand stand: armorStand.values()){
+                stand.remove();
+            }
         }
     }
 
@@ -39,42 +42,33 @@ public final class BoatIndicator extends JavaPlugin implements Listener {
     public void onVehicleEnter(VehicleEnterEvent event) {
         if (event.getEntered() instanceof Player && event.getVehicle() instanceof Boat) {
             Player player = (Player) event.getEntered();
-            Boat boat = (Boat) event.getVehicle();
+            ArmorStand armorStand1 = player.getWorld().spawn(player.getLocation(), ArmorStand.class);
 
             // Create an invisible armor stand
-            armorStand = player.getWorld().spawn(player.getLocation(), ArmorStand.class);
-            armorStand.setVisible(false);
-            armorStand.setSmall(true);
+            armorStand1.setVisible(false);
+            armorStand1.setSmall(true);
 
             // Create an ItemStack that represents the player's head
             ItemStack headItem = getHead(player);
 
             // Set the armor stand's helmet to the player's head ItemStack
-            armorStand.getEquipment().setHelmet(headItem);
+            armorStand1.getEquipment().setHelmet(headItem);
 
             // Teleport the armor stand to the player's location
-            armorStand.teleport(player.getLocation());
+            armorStand1.teleport(player.getLocation());
 
-            // Watch for player movement
-            Bukkit.getPluginManager().registerEvents(new PlayerMoveListener(player, armorStand), this);
+            armorStand.put(player.getUniqueId(),armorStand1);
         }
     }
 
-    class PlayerMoveListener implements Listener {
-        private final Player player;
-        private ArmorStand armorStand;
-
-        public PlayerMoveListener(Player player, ArmorStand armorStand) {
-            this.player = player;
-            this.armorStand = armorStand;
-        }
 
         @EventHandler
         public void onVehicleExit(VehicleExitEvent event) {
-            if (event.getExited() instanceof Player && event.getVehicle() instanceof Boat) {
-                if (armorStand != null) {
-                    armorStand.remove();
-                    armorStand = null;
+            if (event.getExited() instanceof Player player && event.getVehicle() instanceof Boat) {
+                ArmorStand stand = armorStand.get(player.getUniqueId());
+                if (stand != null) {
+                    stand.remove();
+                    stand = null;
                 }
             }
         }
@@ -87,13 +81,15 @@ public final class BoatIndicator extends JavaPlugin implements Listener {
             item.setItemMeta(skull);
             return item;
         }
-    }
+
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
+
             Player player = event.getPlayer();
             Location newLocation = event.getPlayer().getLocation();
-            armorStand.teleport(newLocation);
-            armorStand.teleport(newLocation.setDirection(player.getLocation().getDirection()));
+            ArmorStand stand = armorStand.get(player.getUniqueId());
+            stand.teleport(newLocation);
+            stand.teleport(newLocation.setDirection(player.getLocation().getDirection()));
     }
 }
