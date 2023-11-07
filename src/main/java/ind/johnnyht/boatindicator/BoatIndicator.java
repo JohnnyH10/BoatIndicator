@@ -32,7 +32,7 @@ public final class BoatIndicator extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         if (armorStand != null) {
-            for(ArmorStand stand: armorStand.values()){
+            for (ArmorStand stand : armorStand.values()) {
                 stand.remove();
             }
         }
@@ -57,39 +57,41 @@ public final class BoatIndicator extends JavaPlugin implements Listener {
             // Teleport the armor stand to the player's location
             armorStand1.teleport(player.getLocation());
 
-            armorStand.put(player.getUniqueId(),armorStand1);
+            armorStand.put(player.getUniqueId(), armorStand1);
         }
     }
 
 
-        @EventHandler
-        public void onVehicleExit(VehicleExitEvent event) {
-            if (event.getExited() instanceof Player player && event.getVehicle() instanceof Boat) {
-                ArmorStand stand = armorStand.get(player.getUniqueId());
-                if (stand != null) {
-                    stand.remove();
-                    stand = null;
-                }
+    @EventHandler
+    public void onVehicleExit(VehicleExitEvent event) {
+        if (event.getExited() instanceof Player player && event.getVehicle() instanceof Boat) {
+            ArmorStand stand = armorStand.get(player.getUniqueId());
+            if (stand != null) {
+                stand.remove();
+                armorStand.remove(stand.getUniqueId());
             }
         }
+    }
 
-        public static ItemStack getHead(Player player) {
-            ItemStack item = new ItemStack(Material.PLAYER_HEAD, 1, (short) 3);
-            SkullMeta skull = (SkullMeta) item.getItemMeta();
-            skull.setDisplayName(player.getName());
-            skull.setOwner(player.getName());
-            item.setItemMeta(skull);
-            return item;
-        }
+    public static ItemStack getHead(Player player) {
+        ItemStack item = new ItemStack(Material.PLAYER_HEAD, 1, (short) 3);
+        SkullMeta skull = (SkullMeta) item.getItemMeta();
+        skull.setDisplayName(player.getName());
+        skull.setOwner(player.getName());
+        item.setItemMeta(skull);
+        return item;
+    }
 
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
 
-            Player player = event.getPlayer();
-            Location newLocation = event.getPlayer().getLocation();
-            ArmorStand stand = armorStand.get(player.getUniqueId());
+        Player player = event.getPlayer();
+        Location newLocation = event.getPlayer().getLocation();
+        ArmorStand stand = armorStand.get(player.getUniqueId());
+        if (stand != null){
             stand.teleport(newLocation);
-            stand.teleport(newLocation.setDirection(player.getLocation().getDirection()));
+        stand.teleport(newLocation.setDirection(player.getLocation().getDirection()));
+    }
     }
 }
