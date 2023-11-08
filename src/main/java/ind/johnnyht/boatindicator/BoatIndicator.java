@@ -68,7 +68,7 @@ public final class BoatIndicator extends JavaPlugin implements Listener {
             ArmorStand stand = armorStand.get(player.getUniqueId());
             if (stand != null) {
                 stand.remove();
-                armorStand.remove(stand.getUniqueId());
+                armorStand.remove(player.getUniqueId());
             }
         }
     }
