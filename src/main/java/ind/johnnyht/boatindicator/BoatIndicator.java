@@ -1,5 +1,6 @@
 package ind.johnnyht.boatindicator;
 
+import com.google.errorprone.annotations.Var;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.*;
@@ -41,23 +42,31 @@ public final class BoatIndicator extends JavaPlugin implements Listener {
     @EventHandler
     public void onVehicleEnter(VehicleEnterEvent event) {
         if (event.getEntered() instanceof Player && event.getVehicle() instanceof Boat) {
+
             Player player = (Player) event.getEntered();
-            ArmorStand armorStand1 = player.getWorld().spawn(player.getLocation(), ArmorStand.class);
 
-            // Create an invisible armor stand
-            armorStand1.setVisible(false);
-            armorStand1.setSmall(true);
+            ArmorStand stand = armorStand.get(player.getUniqueId());
+            if(stand == null) {
 
-            // Create an ItemStack that represents the player's head
-            ItemStack headItem = getHead(player);
 
-            // Set the armor stand's helmet to the player's head ItemStack
-            armorStand1.getEquipment().setHelmet(headItem);
+                ArmorStand armorStand1 = player.getWorld().spawn(player.getLocation(), ArmorStand.class);
 
-            // Teleport the armor stand to the player's location
-            armorStand1.teleport(player.getLocation());
 
-            armorStand.put(player.getUniqueId(), armorStand1);
+                // Create an invisible armor stand
+                armorStand1.setVisible(false);
+                armorStand1.setSmall(true);
+
+                // Create an ItemStack that represents the player's head
+                ItemStack headItem = getHead(player);
+
+                // Set the armor stand's helmet to the player's head ItemStack
+                armorStand1.getEquipment().setHelmet(headItem);
+
+                // Teleport the armor stand to the player's location
+                armorStand1.teleport(player.getLocation());
+
+                armorStand.put(player.getUniqueId(), armorStand1);
+            }
         }
     }
 
